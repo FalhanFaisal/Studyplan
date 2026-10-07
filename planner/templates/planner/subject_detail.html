@@ -1,0 +1,110 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ subject.name }} - StudyPlan{% endblock %}
+
+{% block content %}
+
+<div style="margin-bottom: 20px;">
+    <a href="{% url 'subjects' %}" style="text-decoration: none; color: var(--primary-hover); font-weight: 600;">← Back to Subjects</a>
+</div>
+
+<!-- Subject Details Header -->
+<div class="card">
+    <div style="display: flex; align-items: flex-start; justify-content: space-between; flex-wrap: wrap; gap: 16px;">
+        <div>
+            <h1 style="margin: 0 0 8px; font-size: 26px; font-weight: 800;">📖 {{ subject.name }}</h1>
+            <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                {% if subject.code %}<span class="badge badge-primary">📘 {{ subject.code }}</span>{% endif %}
+                <span class="badge badge-purple">🎓 {{ subject.get_semester_display }}</span>
+                <span class="badge badge-success">📋 {{ study_items|length }} Task{{ study_items|length|pluralize }}</span>
+            </div>
+        </div>
+        <div style="display: flex; gap: 8px;">
+            <a href="{% url 'edit_subject' subject.id %}" class="btn btn-secondary" style="padding: 8px 14px; font-size: 13.5px;">✏️ Edit Subject</a>
+            <form method="post" action="{% url 'delete_subject' subject.id %}" style="display: inline;" onsubmit="return confirm('Delete subject and all related tasks?');">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-danger" style="padding: 8px 14px; font-size: 13.5px;">🗑️ Delete Subject</button>
+            </form>
+        </div>
+    </div>
+
+    {% if subject.description %}
+        <p style="margin: 16px 0 0; color: var(--text-muted); font-size: 15px; border-left: 3px solid var(--primary-hover); padding-left: 12px;">
+            {{ subject.description }}
+        </p>
+    {% endif %}
+
+    <div style="margin-top: 24px; padding-top: 18px; border-top: 1px solid var(--border-color);">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+            <span style="font-weight: 700; font-size: 14px; color: var(--text-muted);">Completion Progress</span>
+            <span style="font-weight: 800; font-size: 15px; color: var(--primary-hover);">{{ completed_items }} of {{ study_items|length }} completed ({{ progress }}%)</span>
+        </div>
+        <div class="progress-bar-container">
+            <div class="progress-fill" style="width: {{ progress }}%;"></div>
+        </div>
+    </div>
+</div>
+
+<!-- Study Tasks List Header -->
+<div style="display: flex; align-items: center; justify-content: space-between; margin: 32px 0 16px;">
+    <h2 style="margin: 0; font-size: 20px; font-weight: 800;">📋 Study Items & Tasks</h2>
+    <a href="{% url 'add_study_item' subject.id %}" class="btn btn-primary">➕ Add Study Item</a>
+</div>
+
+{% if study_items %}
+    {% for item in study_items %}
+        <div class="card" style="margin-bottom: 14px; padding: 20px; {% if item.completed %}opacity: 0.75;{% endif %} {% if item.urgent %}border-left: 5px solid var(--danger);{% elif item.important %}border-left: 5px solid var(--warning);{% endif %}">
+            <div style="display: flex; align-items: flex-start; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
+                <div>
+                    <a href="{% url 'study_item_detail' item.id %}" style="font-size: 18px; font-weight: 700; color: var(--text-main); text-decoration: none; {% if item.completed %}text-decoration: line-through; color: var(--text-muted);{% endif %}">
+                        📌 {{ item.title }}
+                    </a>
+                    
+                    <div style="display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px;">
+                        <span class="badge badge-purple">{{ item.get_item_type_display }}</span>
+                        {% if item.priority == "LOW" %}<span class="badge badge-success">🟢 Low</span>
+                        {% elif item.priority == "MEDIUM" %}<span class="badge badge-warning">🟡 Medium</span>
+                        {% elif item.priority == "HIGH" %}<span class="badge badge-warning" style="background: #ffedd5; color: #c2410c;">🟠 High</span>
+                        {% elif item.priority == "URGENT" %}<span class="badge badge-danger">🔴 Urgent</span>{% endif %}
+
+                        {% if item.important %}<span class="badge badge-purple">⭐ Important</span>{% endif %}
+                        {% if item.urgent %}<span class="badge badge-danger">🚨 Urgent</span>{% endif %}
+
+                        {% if item.due_date %}
+                            <span class="badge badge-primary">📅 Due: {{ item.due_date|date:"d M Y" }}</span>
+                        {% endif %}
+
+                        {% if item.completed %}
+                            <span class="badge badge-success">✅ Completed</span>
+                        {% else %}
+                            <span class="badge badge-warning">⏳ Pending</span>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div style="display: flex; gap: 8px;">
+                    <a href="{% url 'study_item_detail' item.id %}" class="btn btn-secondary" style="padding: 6px 12px; font-size: 13px;">View Details</a>
+                    <form method="post" action="{% url 'toggle_study_item' item.id %}" style="display: inline;">
+                        {% csrf_token %}
+                        <button type="submit" class="btn {% if item.completed %}btn-secondary{% else %}btn-accent{% endif %}" style="padding: 6px 12px; font-size: 13px;">
+                            {% if item.completed %}Undo{% else %}Mark Complete{% endif %}
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            {% if item.description %}
+                <p style="margin: 12px 0 0; color: var(--text-muted); font-size: 14px;">{{ item.description }}</p>
+            {% endif %}
+        </div>
+    {% endfor %}
+{% else %}
+    <div class="card" style="text-align: center; padding: 36px;">
+        <div style="font-size: 36px; margin-bottom: 8px;">📝</div>
+        <h3 style="margin: 0 0 6px;">No study items yet!</h3>
+        <p style="color: var(--text-muted); margin-bottom: 20px;">Add study topics, lab work, or assignments for this subject.</p>
+        <a href="{% url 'add_study_item' subject.id %}" class="btn btn-primary">➕ Add First Study Item</a>
+    </div>
+{% endif %}
+
+{% endblock %}

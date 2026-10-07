@@ -1,0 +1,138 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ study_item.title }} - StudyPlan{% endblock %}
+
+{% block content %}
+
+<div style="margin-bottom: 20px;">
+    <a href="{% url 'subject_detail' study_item.subject.id %}" style="text-decoration: none; color: var(--primary-hover); font-weight: 600;">← Back to {{ study_item.subject.name }}</a>
+</div>
+
+<!-- Task Header Card -->
+<div class="card">
+    <div style="display: flex; align-items: flex-start; justify-content: space-between; flex-wrap: wrap; gap: 16px;">
+        <div>
+            <h1 style="margin: 0 0 8px; font-size: 24px; font-weight: 800;">📌 {{ study_item.title }}</h1>
+            <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+                <span class="badge badge-primary">📚 {{ study_item.subject.name }}</span>
+                <span class="badge badge-purple">{{ study_item.get_item_type_display }}</span>
+                
+                {% if study_item.priority == "LOW" %}<span class="badge badge-success">🟢 Low</span>
+                {% elif study_item.priority == "MEDIUM" %}<span class="badge badge-warning">🟡 Medium</span>
+                {% elif study_item.priority == "HIGH" %}<span class="badge badge-warning" style="background: #ffedd5; color: #c2410c;">🟠 High</span>
+                {% elif study_item.priority == "URGENT" %}<span class="badge badge-danger">🔴 Urgent</span>{% endif %}
+
+                {% if study_item.important %}<span class="badge badge-purple">⭐ Important</span>{% endif %}
+                {% if study_item.urgent %}<span class="badge badge-danger">🚨 Urgent</span>{% endif %}
+
+                {% if study_item.due_date %}
+                    <span class="badge badge-primary">📅 Due: {{ study_item.due_date|date:"d M Y" }}</span>
+                {% endif %}
+
+                {% if study_item.completed %}
+                    <span class="badge badge-success">✅ Completed</span>
+                {% else %}
+                    <span class="badge badge-warning">⏳ Pending</span>
+                {% endif %}
+            </div>
+        </div>
+
+        <div style="display: flex; gap: 8px;">
+            <a href="{% url 'edit_study_item' study_item.id %}" class="btn btn-secondary" style="padding: 8px 14px; font-size: 13.5px;">✏️ Edit Task</a>
+            <form method="post" action="{% url 'toggle_study_item' study_item.id %}" style="display: inline;">
+                {% csrf_token %}
+                <button type="submit" class="btn {% if study_item.completed %}btn-secondary{% else %}btn-accent{% endif %}" style="padding: 8px 14px; font-size: 13.5px;">
+                    {% if study_item.completed %}↩️ Mark Pending{% else %}✅ Mark Completed{% endif %}
+                </button>
+            </form>
+            <form method="post" action="{% url 'delete_study_item' study_item.id %}" style="display: inline;" onsubmit="return confirm('Delete this study item?');">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-danger" style="padding: 8px 14px; font-size: 13.5px;">🗑️ Delete</button>
+            </form>
+        </div>
+    </div>
+
+    {% if study_item.description %}
+        <div style="margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--border-color); color: var(--text-muted); font-size: 15px;">
+            {{ study_item.description }}
+        </div>
+    {% endif %}
+</div>
+
+<!-- Notes Section -->
+<div style="display: flex; align-items: center; justify-content: space-between; margin: 32px 0 16px;">
+    <h2 style="margin: 0; font-size: 20px; font-weight: 800;">📝 Study Notes & Attachments</h2>
+    <a href="{% url 'add_note' study_item.id %}" class="btn btn-primary">➕ Add Note</a>
+</div>
+
+{% if notes %}
+    {% for note in notes %}
+        <div class="card" style="margin-bottom: 20px;">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
+                <h3 style="margin: 0; font-size: 18px; font-weight: 700;">{{ note.title }}</h3>
+                <div style="display: flex; gap: 8px;">
+                    <a href="{% url 'edit_note' note.id %}" class="btn btn-secondary" style="padding: 5px 10px; font-size: 13px;">Edit</a>
+                    <form method="post" action="{% url 'delete_note' note.id %}" style="display: inline;" onsubmit="return confirm('Delete this note and all attached files?');">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-danger" style="padding: 5px 10px; font-size: 13px;">Delete</button>
+                    </form>
+                </div>
+            </div>
+
+            <div style="color: var(--text-main); font-size: 15px; margin-bottom: 16px;">
+                {{ note.content|linebreaks }}
+            </div>
+
+            <!-- Attached Images -->
+            {% if note.images.all %}
+                <div style="margin: 16px 0; padding-top: 14px; border-top: 1px dashed var(--border-color);">
+                    <h4 style="margin: 0 0 10px; font-size: 14px; color: var(--text-muted);">🖼️ Attached Images</h4>
+                    <div style="display: flex; flex-wrap: wrap; gap: 12px;">
+                        {% for img in note.images.all %}
+                            <div style="position: relative; display: inline-block;">
+                                <img src="{{ img.image.url }}" alt="Note attachment" style="max-width: 220px; border-radius: 8px; border: 1px solid var(--border-color); display: block;">
+                                <form method="post" action="{% url 'delete_note_image' img.id %}" style="margin-top: 6px;" onsubmit="return confirm('Delete this image?');">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-danger" style="padding: 3px 8px; font-size: 12px; width: 100%;">Delete Image</button>
+                                </form>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            {% endif %}
+
+            <!-- Attached PDFs -->
+            {% if note.pdfs.all %}
+                <div style="margin: 16px 0; padding-top: 14px; border-top: 1px dashed var(--border-color);">
+                    <h4 style="margin: 0 0 10px; font-size: 14px; color: var(--text-muted);">📄 Attached PDF Documents</h4>
+                    <div style="display: flex; flex-wrap: wrap; gap: 10px;">
+                        {% for pdf in note.pdfs.all %}
+                            <div style="display: flex; align-items: center; gap: 8px; background: #f1f5f9; padding: 6px 12px; border-radius: 8px;">
+                                <a href="{{ pdf.pdf.url }}" target="_blank" style="color: #dc2626; font-weight: 700; text-decoration: none; font-size: 14px;">📄 View PDF</a>
+                                <form method="post" action="{% url 'delete_note_pdf' pdf.id %}" style="display: inline;" onsubmit="return confirm('Delete this PDF?');">
+                                    {% csrf_token %}
+                                    <button type="submit" style="background: none; border: none; color: var(--danger); cursor: pointer; font-size: 13px;">✕</button>
+                                </form>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            {% endif %}
+
+            <!-- Action buttons to attach images / PDFs -->
+            <div style="display: flex; gap: 8px; margin-top: 16px; padding-top: 12px; border-top: 1px solid var(--border-color);">
+                <a href="{% url 'add_note_image' note.id %}" class="btn btn-secondary" style="padding: 6px 12px; font-size: 13px;">🖼️ Attach Image</a>
+                <a href="{% url 'add_note_pdf' note.id %}" class="btn btn-secondary" style="padding: 6px 12px; font-size: 13px;">📄 Attach PDF</a>
+            </div>
+        </div>
+    {% endfor %}
+{% else %}
+    <div class="card" style="text-align: center; padding: 36px;">
+        <div style="font-size: 36px; margin-bottom: 8px;">💡</div>
+        <h3 style="margin: 0 0 6px;">No notes added yet!</h3>
+        <p style="color: var(--text-muted); margin-bottom: 20px;">Write notes, paste references, or upload study slides and PDFs.</p>
+        <a href="{% url 'add_note' study_item.id %}" class="btn btn-primary">➕ Create Note</a>
+    </div>
+{% endif %}
+
+{% endblock %}

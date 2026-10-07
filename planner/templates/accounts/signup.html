@@ -1,0 +1,47 @@
+{% extends 'base.html' %}
+
+{% block title %}Sign Up - StudyPlan{% endblock %}
+
+{% block content %}
+<div style="max-width: 440px; margin: 40px auto 0;">
+    <div class="card" style="box-shadow: var(--shadow-lg); text-align: center;">
+        
+        <div style="font-size: 40px; margin-bottom: 8px;">✨</div>
+        <h1 style="margin: 0 0 6px; font-size: 26px;">Create your Account</h1>
+        <p style="color: var(--text-muted); margin-bottom: 24px;">Join StudyPlan today and master your subjects, tasks, and exams.</p>
+
+        <form method="post" style="text-align: left;">
+            {% csrf_token %}
+
+            {% if form.non_field_errors %}
+                <div class="message-alert error" style="margin-bottom: 16px;">
+                    {{ form.non_field_errors }}
+                </div>
+            {% endif %}
+
+            {% for field in form %}
+                <div class="form-group">
+                    <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                    {{ field }}
+                    {% if field.help_text %}
+                        <small style="color: var(--text-muted); display: block; margin-top: 4px; font-size: 12px;">{{ field.help_text }}</small>
+                    {% endif %}
+                    {% if field.errors %}
+                        <small style="color: var(--danger); font-weight: 500;">{{ field.errors.0 }}</small>
+                    {% endif %}
+                </div>
+            {% endfor %}
+
+            <button type="submit" class="btn btn-accent" style="width: 100%; padding: 12px; margin-top: 8px;">
+                🚀 Register & Get Started
+            </button>
+        </form>
+
+        <div style="margin-top: 24px; padding-top: 18px; border-top: 1px solid var(--border-color); font-size: 14px; color: var(--text-muted);">
+            Already have an account? 
+            <a href="{% url 'login' %}" style="color: var(--primary-hover); font-weight: 600; text-decoration: none;">Sign in here</a>
+        </div>
+
+    </div>
+</div>
+{% endblock %}

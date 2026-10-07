@@ -1,0 +1,279 @@
+{% extends 'base.html' %}
+
+{% block title %}Dashboard - StudyPlan{% endblock %}
+
+{% block extra_head %}
+<style>
+    .welcome-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 16px;
+        margin-bottom: 24px;
+    }
+    .welcome-title {
+        margin: 0;
+        font-size: 26px;
+        font-weight: 800;
+    }
+    .welcome-sub {
+        margin: 4px 0 0;
+        color: var(--text-muted);
+        font-size: 15px;
+    }
+
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 16px;
+        margin-bottom: 28px;
+    }
+
+    .stat-card {
+        background: var(--card-bg);
+        border: 1px solid var(--border-color);
+        border-radius: var(--radius);
+        padding: 18px 20px;
+        box-shadow: var(--shadow-sm);
+        text-decoration: none;
+        color: var(--text-main);
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    .stat-card:hover {
+        transform: translateY(-3px);
+        box-shadow: var(--shadow-md);
+    }
+    .stat-card h3 {
+        margin: 0 0 6px;
+        font-size: 13.5px;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        font-weight: 700;
+    }
+    .stat-number {
+        font-size: 28px;
+        font-weight: 800;
+        color: var(--text-main);
+    }
+
+    .section-title {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        font-size: 19px;
+        font-weight: 700;
+        margin: 32px 0 16px;
+    }
+
+    .item-card {
+        background: var(--card-bg);
+        border: 1px solid var(--border-color);
+        border-radius: var(--radius);
+        padding: 16px 20px;
+        margin-bottom: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 12px;
+        box-shadow: var(--shadow-sm);
+        transition: border-color 0.2s ease;
+    }
+    .item-card:hover {
+        border-color: #cbd5e1;
+    }
+    .item-title {
+        font-weight: 700;
+        font-size: 16px;
+        color: var(--text-main);
+        text-decoration: none;
+    }
+    .item-title:hover {
+        color: var(--primary-hover);
+    }
+
+    .type-summary-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 16px;
+        margin-bottom: 28px;
+    }
+    .type-card {
+        background: var(--card-bg);
+        border: 1px solid var(--border-color);
+        border-radius: var(--radius);
+        padding: 20px;
+        text-align: center;
+        box-shadow: var(--shadow-sm);
+    }
+    .type-icon {
+        font-size: 32px;
+        margin-bottom: 8px;
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 32px;
+        background: var(--card-bg);
+        border: 1px border-dash var(--border-color);
+        border-radius: var(--radius);
+        color: var(--text-muted);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<div class="welcome-header">
+    <div>
+        <h1 class="welcome-title">👋 Welcome to StudyPlan</h1>
+        <p class="welcome-sub">Logged in as <strong>{{ request.user.email }}</strong> — Ready to achieve your study goals today?</p>
+    </div>
+    <div style="display: flex; gap: 10px;">
+        <a href="{% url 'quick_add' %}" class="btn btn-accent">⚡ Quick Add Task</a>
+        <a href="{% url 'add_subject' %}" class="btn btn-primary">➕ New Subject</a>
+    </div>
+</div>
+
+<!-- Stats Grid -->
+<div class="stats-grid">
+    <a href="{% url 'subjects' %}" class="stat-card">
+        <h3>📚 Study Items</h3>
+        <div class="stat-number" style="color: var(--primary-hover);">{{ total_items }}</div>
+    </a>
+    <a href="{% url 'subjects' %}" class="stat-card">
+        <h3>✅ Completed</h3>
+        <div class="stat-number" style="color: var(--success);">{{ completed_items }}</div>
+    </a>
+    <a href="{% url 'subjects' %}" class="stat-card">
+        <h3>⏳ Pending</h3>
+        <div class="stat-number" style="color: var(--warning);">{{ pending_items }}</div>
+    </a>
+    <a href="{% url 'alerts' %}" class="stat-card">
+        <h3>⭐ Important</h3>
+        <div class="stat-number" style="color: #7c3aed;">{{ important_items }}</div>
+    </a>
+    <a href="{% url 'alerts' %}" class="stat-card">
+        <h3>🚨 Urgent</h3>
+        <div class="stat-number" style="color: var(--danger);">{{ urgent_items }}</div>
+    </a>
+    <a href="#overdue" class="stat-card">
+        <h3>⚠️ Overdue</h3>
+        <div class="stat-number" style="color: var(--danger);">{{ overdue_count }}</div>
+    </a>
+</div>
+
+<!-- Overall Progress -->
+<div class="card">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+        <h3 style="margin: 0; font-size: 16px;">Overall Workload Completion</h3>
+        <span style="font-weight: 800; font-size: 18px; color: var(--primary-hover);">{{ progress }}%</span>
+    </div>
+    <div class="progress-bar-container">
+        <div class="progress-fill" style="width: {{ progress }}%;"></div>
+    </div>
+</div>
+
+<!-- My Subjects -->
+<div class="section-title">
+    <span>📚 My Subjects ({{ subjects|length }})</span>
+    <a href="{% url 'subjects' %}" style="font-size: 14px; text-decoration: none; color: var(--primary-hover); font-weight: 600;">View All →</a>
+</div>
+
+{% if subjects %}
+    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 16px;">
+        {% for subject in subjects %}
+            <a href="{% url 'subject_detail' subject.id %}" class="card" style="text-decoration: none; color: inherit; margin: 0; transition: transform 0.2s ease, box-shadow 0.2s ease;">
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+                    <span class="badge badge-purple">🎓 {{ subject.get_semester_display }}</span>
+                    {% if subject.code %}<span class="badge badge-primary">{{ subject.code }}</span>{% endif %}
+                </div>
+                <h3 style="margin: 0 0 6px; font-size: 18px; font-weight: 700;">📖 {{ subject.name }}</h3>
+                <p style="margin: 0; color: var(--text-muted); font-size: 14px;">{{ subject.study_items.count }} Study Task{{ subject.study_items.count|pluralize }}</p>
+            </a>
+        {% endfor %}
+    </div>
+{% else %}
+    <div class="empty-state">
+        <div style="font-size: 32px; margin-bottom: 8px;">😶</div>
+        <h4 style="margin: 0 0 4px;">No subjects added yet!</h4>
+        <p style="margin: 0 0 16px;">Add your first subject to organize your study plan.</p>
+        <a href="{% url 'add_subject' %}" class="btn btn-primary">➕ Add First Subject</a>
+    </div>
+{% endif %}
+
+<!-- Type Summary -->
+<div class="section-title">
+    <span>📋 Workload Breakdown</span>
+</div>
+<div class="type-summary-grid">
+    <div class="type-card">
+        <div class="type-icon">📝</div>
+        <div style="font-weight: 700; color: var(--text-muted); font-size: 13px;">ASSIGNMENTS</div>
+        <div style="font-size: 24px; font-weight: 800; margin-top: 4px;">{{ assignment_count }}</div>
+    </div>
+    <div class="type-card">
+        <div class="type-icon">🎤</div>
+        <div style="font-weight: 700; color: var(--text-muted); font-size: 13px;">SEMINARS</div>
+        <div style="font-size: 24px; font-weight: 800; margin-top: 4px;">{{ seminar_count }}</div>
+    </div>
+    <div class="type-card">
+        <div class="type-icon">📌</div>
+        <div style="font-weight: 700; color: var(--text-muted); font-size: 13px;">OTHER WORK</div>
+        <div style="font-size: 24px; font-weight: 800; margin-top: 4px;">{{ other_count }}</div>
+    </div>
+</div>
+
+<!-- Overdue Tasks -->
+<div class="section-title" id="overdue">
+    <span style="color: var(--danger);">⚠️ Overdue Tasks ({{ overdue_count }})</span>
+</div>
+{% if overdue_items %}
+    {% for item in overdue_items %}
+        <div class="item-card" style="border-left: 5px solid var(--danger);">
+            <div>
+                <a href="{% url 'study_item_detail' item.id %}" class="item-title">📌 {{ item.title }}</a>
+                <div style="display: flex; gap: 8px; margin-top: 6px; flex-wrap: wrap;">
+                    <span class="badge badge-primary">📚 {{ item.subject.name }}</span>
+                    <span class="badge badge-danger">📅 Due: {{ item.due_date }}</span>
+                    {% if item.important %}<span class="badge badge-purple">⭐ Important</span>{% endif %}
+                    {% if item.urgent %}<span class="badge badge-warning">🚨 Urgent</span>{% endif %}
+                </div>
+            </div>
+            <a href="{% url 'study_item_detail' item.id %}" class="btn btn-secondary" style="padding: 6px 12px; font-size: 13px;">View Task</a>
+        </div>
+    {% endfor %}
+{% else %}
+    <div class="card" style="text-align: center; color: var(--success); font-weight: 600;">
+        🎉 Great job! You have no overdue tasks.
+    </div>
+{% endif %}
+
+<!-- Due Today Tasks -->
+<div class="section-title">
+    <span>📅 Tasks Due Today ({{ due_today_count }})</span>
+</div>
+{% if today_items %}
+    {% for item in today_items %}
+        <div class="item-card" style="border-left: 5px solid var(--primary);">
+            <div>
+                <a href="{% url 'study_item_detail' item.id %}" class="item-title">📌 {{ item.title }}</a>
+                <div style="display: flex; gap: 8px; margin-top: 6px; flex-wrap: wrap;">
+                    <span class="badge badge-primary">📚 {{ item.subject.name }}</span>
+                    <span class="badge badge-warning">📅 Due Today</span>
+                    {% if item.important %}<span class="badge badge-purple">⭐ Important</span>{% endif %}
+                    {% if item.urgent %}<span class="badge badge-danger">🚨 Urgent</span>{% endif %}
+                </div>
+            </div>
+            <a href="{% url 'study_item_detail' item.id %}" class="btn btn-secondary" style="padding: 6px 12px; font-size: 13px;">View Task</a>
+        </div>
+    {% endfor %}
+{% else %}
+    <div class="card" style="text-align: center; color: var(--text-muted);">
+        😌 Nothing due today! Take time to relax or work ahead.
+    </div>
+{% endif %}
+
+{% endblock %}

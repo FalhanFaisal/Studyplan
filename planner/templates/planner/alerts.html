@@ -1,0 +1,87 @@
+{% extends 'base.html' %}
+
+{% block title %}Alerts - StudyPlan{% endblock %}
+
+{% block content %}
+
+<div style="margin-bottom: 24px;">
+    <h1 style="margin: 0 0 6px; font-size: 26px; font-weight: 800;">🔔 Priority Alerts & Notifications</h1>
+    <p style="color: var(--text-muted); margin: 0;">Stay on top of urgent tasks, important deadlines, and overdue assignments.</p>
+</div>
+
+<!-- Urgent Alerts -->
+<div style="margin-bottom: 28px;">
+    <h2 style="font-size: 19px; font-weight: 700; color: var(--danger); margin-bottom: 12px;">🚨 Urgent Tasks</h2>
+    {% if urgent_items %}
+        {% for item in urgent_items %}
+            <div class="card" style="border-left: 5px solid var(--danger); margin-bottom: 12px; padding: 18px 20px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                    <div>
+                        <a href="{% url 'study_item_detail' item.id %}" style="font-size: 17px; font-weight: 700; color: var(--text-main); text-decoration: none;">📌 {{ item.title }}</a>
+                        <div style="display: flex; gap: 6px; margin-top: 6px;">
+                            <span class="badge badge-primary">📚 {{ item.subject.name }}</span>
+                            {% if item.due_date %}<span class="badge badge-danger">📅 Due: {{ item.due_date|date:"d M Y" }}</span>{% endif %}
+                        </div>
+                    </div>
+                    <a href="{% url 'study_item_detail' item.id %}" class="btn btn-primary" style="padding: 6px 12px; font-size: 13px;">View Task</a>
+                </div>
+            </div>
+        {% endfor %}
+    {% else %}
+        <div class="card" style="text-align: center; color: var(--text-muted); padding: 24px;">
+            😌 No urgent tasks requiring immediate attention!
+        </div>
+    {% endif %}
+</div>
+
+<!-- Important Alerts -->
+<div style="margin-bottom: 28px;">
+    <h2 style="font-size: 19px; font-weight: 700; color: #7c3aed; margin-bottom: 12px;">⭐ Important Tasks</h2>
+    {% if important_items %}
+        {% for item in important_items %}
+            <div class="card" style="border-left: 5px solid #7c3aed; margin-bottom: 12px; padding: 18px 20px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                    <div>
+                        <a href="{% url 'study_item_detail' item.id %}" style="font-size: 17px; font-weight: 700; color: var(--text-main); text-decoration: none;">📌 {{ item.title }}</a>
+                        <div style="display: flex; gap: 6px; margin-top: 6px;">
+                            <span class="badge badge-primary">📚 {{ item.subject.name }}</span>
+                            {% if item.due_date %}<span class="badge badge-purple">📅 Due: {{ item.due_date|date:"d M Y" }}</span>{% endif %}
+                        </div>
+                    </div>
+                    <a href="{% url 'study_item_detail' item.id %}" class="btn btn-secondary" style="padding: 6px 12px; font-size: 13px;">View Task</a>
+                </div>
+            </div>
+        {% endfor %}
+    {% else %}
+        <div class="card" style="text-align: center; color: var(--text-muted); padding: 24px;">
+            🎉 No important tasks flagged.
+        </div>
+    {% endif %}
+</div>
+
+<!-- Overdue Alerts -->
+<div style="margin-bottom: 28px;">
+    <h2 style="font-size: 19px; font-weight: 700; color: var(--danger); margin-bottom: 12px;">⚠️ Overdue Tasks</h2>
+    {% if overdue_items %}
+        {% for item in overdue_items %}
+            <div class="card" style="border-left: 5px solid var(--danger); margin-bottom: 12px; padding: 18px 20px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                    <div>
+                        <a href="{% url 'study_item_detail' item.id %}" style="font-size: 17px; font-weight: 700; color: var(--text-main); text-decoration: none;">📌 {{ item.title }}</a>
+                        <div style="display: flex; gap: 6px; margin-top: 6px;">
+                            <span class="badge badge-primary">📚 {{ item.subject.name }}</span>
+                            <span class="badge badge-danger">⚠️ Overdue: {{ item.due_date|date:"d M Y" }}</span>
+                        </div>
+                    </div>
+                    <a href="{% url 'study_item_detail' item.id %}" class="btn btn-primary" style="padding: 6px 12px; font-size: 13px;">View Task</a>
+                </div>
+            </div>
+        {% endfor %}
+    {% else %}
+        <div class="card" style="text-align: center; color: var(--success); font-weight: 600; padding: 24px;">
+            🎉 You have zero overdue tasks!
+        </div>
+    {% endif %}
+</div>
+
+{% endblock %}

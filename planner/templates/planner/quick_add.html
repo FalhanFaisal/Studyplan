@@ -1,0 +1,55 @@
+{% extends 'base.html' %}
+
+{% block title %}Quick Add Task - StudyPlan{% endblock %}
+
+{% block content %}
+<div style="max-width: 600px; margin: 0 auto;">
+    <div class="card">
+        <h1 style="margin: 0 0 6px; font-size: 24px; font-weight: 800;">⚡ Quick Add Study Item</h1>
+        <p style="color: var(--text-muted); margin-bottom: 24px;">Rapidly add a task, assignment, or study topic to any of your subjects.</p>
+
+        {% if subjects %}
+            <form method="post">
+                {% csrf_token %}
+
+                <div class="form-group">
+                    <label for="id_subject">Select Subject</label>
+                    <select name="subject" id="id_subject" required>
+                        <option value="" disabled selected>-- Select a Subject --</option>
+                        {% for subject in subjects %}
+                            <option value="{{ subject.id }}">📖 {{ subject.name }} ({% if subject.code %}{{ subject.code }}{% else %}{{ subject.get_semester_display }}{% endif %})</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                {% for field in form %}
+                    <div class="form-group">
+                        {% if field.field.widget.input_type == "checkbox" %}
+                            <div class="form-check">
+                                {{ field }}
+                                <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                            </div>
+                        {% else %}
+                            <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                            {{ field }}
+                        {% endif %}
+                        {% if field.errors %}
+                            <small style="color: var(--danger);">{{ field.errors.0 }}</small>
+                        {% endif %}
+                    </div>
+                {% endfor %}
+
+                <div style="display: flex; gap: 12px; margin-top: 24px;">
+                    <button type="submit" class="btn btn-accent" style="flex: 1;">🚀 Save Task</button>
+                    <a href="{% url 'dashboard' %}" class="btn btn-secondary">Cancel</a>
+                </div>
+            </form>
+        {% else %}
+            <div style="text-align: center; padding: 24px;">
+                <p style="color: var(--text-muted);">You need to create at least one subject before adding tasks.</p>
+                <a href="{% url 'add_subject' %}" class="btn btn-primary">➕ Create a Subject First</a>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

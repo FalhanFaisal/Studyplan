@@ -1,0 +1,202 @@
+{% extends 'base.html' %}
+
+{% block title %}My Subjects - StudyPlan{% endblock %}
+
+{% block extra_head %}
+<style>
+    .header-actions {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 16px;
+        margin-bottom: 24px;
+    }
+
+    .filter-bar {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        flex-wrap: wrap;
+        background: var(--card-bg);
+        border: 1px solid var(--border-color);
+        padding: 14px 18px;
+        border-radius: var(--radius);
+        margin-bottom: 24px;
+        box-shadow: var(--shadow-sm);
+    }
+    .filter-bar input, .filter-bar select {
+        padding: 8px 12px;
+        font-size: 14px;
+        width: auto;
+        min-width: 180px;
+    }
+
+    .subject-card {
+        background: var(--card-bg);
+        border: 1px solid var(--border-color);
+        border-radius: var(--radius);
+        padding: 24px;
+        margin-bottom: 20px;
+        box-shadow: var(--shadow-sm);
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    .subject-card:hover {
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-md);
+    }
+
+    .subject-header {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 16px;
+        margin-bottom: 12px;
+    }
+    .subject-name {
+        margin: 0;
+        font-size: 22px;
+        font-weight: 800;
+        color: var(--text-main);
+        text-decoration: none;
+    }
+    .subject-name:hover {
+        color: var(--primary-hover);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<div class="header-actions">
+    <div>
+        <h1 style="margin: 0; font-size: 26px; font-weight: 800;">📚 My Subjects</h1>
+        <p style="margin: 4px 0 0; color: var(--text-muted);">Manage your curriculum, progress, and tasks per semester.</p>
+    </div>
+    <a href="{% url 'add_subject' %}" class="btn btn-primary">➕ Add New Subject</a>
+</div>
+
+<!-- Progress Summary Header -->
+<div class="card" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 16px; text-align: center;">
+    <div>
+        <div style="font-size: 24px; font-weight: 800; color: var(--primary-hover);">{{ subjects|length }}</div>
+        <div style="font-size: 13px; font-weight: 700; color: var(--text-muted);">SUBJECTS</div>
+    </div>
+    <div>
+        <div style="font-size: 24px; font-weight: 800; color: var(--text-main);">{{ total_study_items }}</div>
+        <div style="font-size: 13px; font-weight: 700; color: var(--text-muted);">STUDY ITEMS</div>
+    </div>
+    <div>
+        <div style="font-size: 24px; font-weight: 800; color: var(--success);">{{ completed_study_items }}</div>
+        <div style="font-size: 13px; font-weight: 700; color: var(--text-muted);">COMPLETED</div>
+    </div>
+    <div>
+        <div style="font-size: 24px; font-weight: 800; color: var(--warning);">{{ pending_study_items }}</div>
+        <div style="font-size: 13px; font-weight: 700; color: var(--text-muted);">PENDING</div>
+    </div>
+    <div>
+        <div style="font-size: 24px; font-weight: 800; color: var(--accent);">{{ overall_progress }}%</div>
+        <div style="font-size: 13px; font-weight: 700; color: var(--text-muted);">OVERALL PROGRESS</div>
+    </div>
+</div>
+
+<!-- Search & Filtering Bar -->
+<div class="filter-bar">
+    <input type="text" id="subjectSearch" placeholder="🔍 Search by name or code..." style="flex: 1;">
+    <select id="semesterFilter">
+        <option value="all">🎓 All Semesters</option>
+        <option value="FIRST">First Semester</option>
+        <option value="SECOND">Second Semester</option>
+        <option value="THIRD">Third Semester</option>
+        <option value="FOURTH">Fourth Semester</option>
+        <option value="FIFTH">Fifth Semester</option>
+        <option value="SIXTH">Sixth Semester</option>
+    </select>
+    <select id="subjectSort">
+        <option value="default">↕️ Sort Subjects</option>
+        <option value="name-asc">🔤 Name (A → Z)</option>
+        <option value="name-desc">🔤 Name (Z → A)</option>
+        <option value="items-desc">📋 Most Study Items</option>
+    </select>
+</div>
+
+<!-- Subject List -->
+<div id="subjectsContainer">
+    {% if subjects %}
+        {% for subject in subjects %}
+            <div class="subject-card" data-semester="{{ subject.semester }}">
+                <div class="subject-header">
+                    <div>
+                        <a href="{% url 'subject_detail' subject.id %}" class="subject-name">📖 {{ subject.name }}</a>
+                        <div style="display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap;">
+                            {% if subject.code %}<span class="badge badge-primary">📘 Code: {{ subject.code }}</span>{% endif %}
+                            <span class="badge badge-purple">🎓 {{ subject.get_semester_display }}</span>
+                            <span class="badge badge-success">📋 {{ subject.study_item_count }} Item{{ subject.study_item_count|pluralize }}</span>
+                        </div>
+                    </div>
+                    <div style="display: flex; gap: 8px;">
+                        <a href="{% url 'subject_detail' subject.id %}" class="btn btn-primary" style="padding: 8px 14px; font-size: 13px;">View Tasks</a>
+                        <a href="{% url 'edit_subject' subject.id %}" class="btn btn-secondary" style="padding: 8px 14px; font-size: 13px;">Edit</a>
+                        <form method="post" action="{% url 'delete_subject' subject.id %}" style="display: inline;" onsubmit="return confirm('Delete this subject and all its tasks?');">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-danger" style="padding: 8px 14px; font-size: 13px;">Delete</button>
+                        </form>
+                    </div>
+                </div>
+
+                {% if subject.description %}
+                    <p style="margin: 12px 0; color: var(--text-muted); font-size: 14.5px;">{{ subject.description }}</p>
+                {% endif %}
+
+                {% if subject.study_item_count > 0 %}
+                    <div style="margin-top: 16px;">
+                        <div style="display: flex; justify-content: space-between; font-size: 13px; font-weight: 700; color: var(--text-muted); margin-bottom: 4px;">
+                            <span>Progress</span>
+                            <span>{% widthratio subject.completed_count subject.study_item_count 100 %}% Completed</span>
+                        </div>
+                        <div class="progress-bar-container">
+                            <div class="progress-fill" style="width: {% widthratio subject.completed_count subject.study_item_count 100 %}%;"></div>
+                        </div>
+                    </div>
+                {% endif %}
+            </div>
+        {% endfor %}
+    {% else %}
+        <div class="card" style="text-align: center; padding: 40px;">
+            <div style="font-size: 40px; margin-bottom: 12px;">📚</div>
+            <h3 style="margin: 0 0 8px;">No Subjects Added Yet</h3>
+            <p style="color: var(--text-muted); margin-bottom: 20px;">Start by creating your first subject for the semester.</p>
+            <a href="{% url 'add_subject' %}" class="btn btn-primary">➕ Create First Subject</a>
+        </div>
+    {% endif %}
+</div>
+
+<script>
+    const searchInput = document.getElementById("subjectSearch");
+    const semesterFilter = document.getElementById("semesterFilter");
+    const subjectSort = document.getElementById("subjectSort");
+
+    function filterSubjects() {
+        const query = searchInput.value.toLowerCase().trim();
+        const sem = semesterFilter.value;
+        const cards = document.querySelectorAll(".subject-card");
+
+        cards.forEach(card => {
+            const text = card.textContent.toLowerCase();
+            const cardSem = card.getAttribute("data-semester");
+            const matchesQuery = text.includes(query);
+            const matchesSem = sem === "all" || cardSem === sem;
+
+            if (matchesQuery && matchesSem) {
+                card.style.display = "block";
+            } else {
+                card.style.display = "none";
+            }
+        });
+    }
+
+    searchInput.addEventListener("input", filterSubjects);
+    semesterFilter.addEventListener("change", filterSubjects);
+</script>
+
+{% endblock %}

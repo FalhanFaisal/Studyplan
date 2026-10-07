@@ -1,0 +1,686 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en" data-theme="auto">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}StudyPlan - Student Workload & Task Manager{% endblock %}</title>
+
+    <!-- PWA Manifest & Meta Tags -->
+    <link rel="manifest" href="{% static 'manifest.json' %}">
+    <meta name="theme-color" content="#3b82f6" id="themeColorMeta">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="apple-touch-icon" href="{% static 'icons/icon-192.png' %}">
+
+    <style>
+        /* Base Theme Variables - Light Mode Default */
+        :root {
+            --primary: #3b82f6;
+            --primary-hover: #2563eb;
+            --primary-light: #eff6ff;
+            --accent: #8b5cf6;
+            --bg-body: #f8fafc;
+            --card-bg: #ffffff;
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+            --border-color: #e2e8f0;
+
+            --danger: #ef4444;
+            --danger-light: #fef2f2;
+            --warning: #f59e0b;
+            --warning-light: #fffbeb;
+            --success: #10b981;
+            --success-light: #ecfdf5;
+
+            --radius: 12px;
+            --shadow-sm: 0 1px 3px rgba(0,0,0,0.05);
+            --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.07), 0 2px 4px -2px rgba(0,0,0,0.05);
+            --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -4px rgba(0,0,0,0.05);
+        }
+
+        /* Automatic System Dark Mode Detection */
+        @media (prefers-color-scheme: dark) {
+            html[data-theme="auto"] {
+                --bg-body: #0f172a;
+                --card-bg: #1e293b;
+                --text-main: #f8fafc;
+                --text-muted: #94a3b8;
+                --border-color: #334155;
+                --primary-light: #1e3a8a;
+                --danger-light: #450a0a;
+                --warning-light: #451a03;
+                --success-light: #064e3b;
+                --shadow-sm: 0 1px 3px rgba(0,0,0,0.4);
+                --shadow-md: 0 4px 6px rgba(0,0,0,0.5);
+                --shadow-lg: 0 10px 15px rgba(0,0,0,0.6);
+            }
+        }
+
+        /* Explicit Manual Dark Mode Override */
+        html[data-theme="dark"] {
+            --bg-body: #0f172a;
+            --card-bg: #1e293b;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --border-color: #334155;
+            --primary-light: #1e3a8a;
+            --danger-light: #450a0a;
+            --warning-light: #451a03;
+            --success-light: #064e3b;
+            --shadow-sm: 0 1px 3px rgba(0,0,0,0.4);
+            --shadow-md: 0 4px 6px rgba(0,0,0,0.5);
+            --shadow-lg: 0 10px 15px rgba(0,0,0,0.6);
+        }
+
+        /* Explicit Manual Light Mode Override */
+        html[data-theme="light"] {
+            --bg-body: #f8fafc;
+            --card-bg: #ffffff;
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+            --border-color: #e2e8f0;
+            --primary-light: #eff6ff;
+            --danger-light: #fef2f2;
+            --warning-light: #fffbeb;
+            --success-light: #ecfdf5;
+            --shadow-sm: 0 1px 3px rgba(0,0,0,0.05);
+            --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.07);
+            --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.1);
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-body);
+            color: var(--text-main);
+            margin: 0;
+            padding: 0;
+            line-height: 1.5;
+            transition: background-color 0.25s ease, color 0.25s ease;
+        }
+
+        .layout-container {
+            max-width: 1050px;
+            margin: 0 auto;
+            padding: 24px 20px 60px;
+        }
+
+        /* Top Header & Navbar */
+        .navbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 12px;
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            padding: 12px 18px;
+            border-radius: var(--radius);
+            box-shadow: var(--shadow-sm);
+            margin-bottom: 28px;
+        }
+
+        .brand-logo {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 20px;
+            font-weight: 800;
+            color: var(--primary-hover);
+            text-decoration: none;
+        }
+
+        .nav-links {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+
+        .nav-item {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 14px;
+            border-radius: 8px;
+            text-decoration: none;
+            color: var(--text-muted);
+            font-weight: 600;
+            font-size: 14.5px;
+            transition: all 0.2s ease;
+        }
+
+        .nav-item:hover {
+            background: var(--primary-light);
+            color: var(--primary-hover);
+        }
+
+        .nav-item.active {
+            background: var(--primary-hover);
+            color: #ffffff;
+        }
+
+        /* Compact Rounded Header Buttons (36-40px high) */
+        .controls-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        /* Modern Small Icon Theme Toggle Button */
+        .theme-icon-btn {
+            width: 38px;
+            height: 38px;
+            border-radius: 50%;
+            border: 1px solid var(--border-color);
+            background: var(--card-bg);
+            color: var(--text-main);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            outline: none;
+        }
+
+        .theme-icon-btn:hover {
+            background: var(--primary-light);
+            border-color: var(--primary);
+            transform: scale(1.05);
+        }
+
+        /* Floating Theme Dropdown Menu */
+        .theme-dropdown {
+            position: absolute;
+            top: 48px;
+            right: 0;
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            box-shadow: var(--shadow-md);
+            padding: 6px;
+            display: none;
+            flex-direction: column;
+            gap: 4px;
+            z-index: 100;
+            min-width: 140px;
+        }
+
+        .theme-dropdown.show {
+            display: flex;
+        }
+
+        .theme-option-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-main);
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-size: 13.5px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            width: 100%;
+            text-align: left;
+            transition: background 0.15s ease;
+        }
+
+        .theme-option-btn:hover {
+            background: var(--primary-light);
+            color: var(--primary-hover);
+        }
+
+        .theme-option-btn.active {
+            background: var(--primary-hover);
+            color: #ffffff;
+        }
+
+        /* Noticeable PWA Install Button */
+        .pwa-install-pill {
+            display: none;
+            height: 38px;
+            padding: 0 16px;
+            border-radius: 20px;
+            border: 1px solid var(--primary-hover);
+            background: var(--primary-light);
+            color: var(--primary-hover);
+            font-weight: 700;
+            font-size: 13.5px;
+            cursor: pointer;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.2s ease;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .pwa-install-pill:hover {
+            background: var(--primary-hover);
+            color: #ffffff;
+            transform: translateY(-1px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .logout-btn {
+            background: transparent;
+            border: 1px solid var(--border-color);
+            color: var(--danger);
+            padding: 7px 13px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.2s ease;
+        }
+
+        .logout-btn:hover {
+            background: var(--danger-light);
+            border-color: var(--danger);
+        }
+
+        /* Messages / Toast Notifications */
+        .messages-container {
+            margin-bottom: 24px;
+        }
+
+        .message-alert {
+            padding: 14px 18px;
+            border-radius: var(--radius);
+            margin-bottom: 10px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .message-alert.success {
+            background: var(--success-light);
+            color: #10b981;
+            border: 1px solid #10b981;
+        }
+
+        .message-alert.error {
+            background: var(--danger-light);
+            color: #ef4444;
+            border: 1px solid #ef4444;
+        }
+
+        .message-alert.warning {
+            background: var(--warning-light);
+            color: #f59e0b;
+            border: 1px solid #f59e0b;
+        }
+
+        .message-alert.info {
+            background: var(--primary-light);
+            color: #3b82f6;
+            border: 1px solid #3b82f6;
+        }
+
+        /* Common Elements & Cards */
+        .card {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius);
+            padding: 24px;
+            box-shadow: var(--shadow-sm);
+            margin-bottom: 20px;
+            transition: background-color 0.25s ease, border-color 0.25s ease;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            padding: 10px 18px;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 14.5px;
+            text-decoration: none;
+            cursor: pointer;
+            border: none;
+            transition: all 0.2s ease;
+        }
+
+        .btn-primary {
+            background: var(--primary-hover);
+            color: #ffffff;
+        }
+        .btn-primary:hover {
+            background: #1d4ed8;
+            transform: translateY(-1px);
+        }
+
+        .btn-accent {
+            background: var(--accent);
+            color: #ffffff;
+        }
+        .btn-accent:hover {
+            background: #7c3aed;
+            transform: translateY(-1px);
+        }
+
+        .btn-secondary {
+            background: var(--card-bg);
+            color: var(--text-main);
+            border: 1px solid var(--border-color);
+        }
+        .btn-secondary:hover {
+            background: var(--primary-light);
+        }
+
+        .btn-danger {
+            background: var(--danger);
+            color: #ffffff;
+        }
+        .btn-danger:hover {
+            background: #dc2626;
+        }
+
+        /* Form Inputs */
+        .form-group {
+            margin-bottom: 18px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 6px;
+            font-weight: 600;
+            font-size: 14px;
+            color: var(--text-main);
+        }
+
+        .form-control, input[type="text"], input[type="email"], input[type="password"], input[type="date"], select, textarea {
+            width: 100%;
+            padding: 11px 14px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            font-size: 15px;
+            color: var(--text-main);
+            background: var(--card-bg);
+            transition: border-color 0.2s ease, background-color 0.25s ease;
+        }
+
+        .form-control:focus, input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: var(--primary-hover);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+        }
+
+        .form-check {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 12px;
+        }
+
+        .form-check input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+        }
+
+        .form-check label {
+            margin-bottom: 0;
+            cursor: pointer;
+            font-weight: 500;
+        }
+
+        /* Badges */
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 12.5px;
+            font-weight: 600;
+        }
+
+        .badge-primary { background: var(--primary-light); color: var(--primary-hover); }
+        .badge-success { background: var(--success-light); color: #10b981; }
+        .badge-warning { background: var(--warning-light); color: #f59e0b; }
+        .badge-danger { background: var(--danger-light); color: #ef4444; }
+        .badge-purple { background: #f3e8ff; color: #7e22ce; }
+
+        /* Progress Bar */
+        .progress-bar-container {
+            width: 100%;
+            height: 10px;
+            background: var(--border-color);
+            border-radius: 20px;
+            overflow: hidden;
+            margin: 8px 0;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #3b82f6, #8b5cf6);
+            border-radius: 20px;
+            transition: width 0.5s ease;
+        }
+
+        @media (max-width: 640px) {
+            .navbar {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            .nav-links {
+                justify-content: center;
+            }
+        }
+    </style>
+    {% block extra_head %}{% endblock %}
+</head>
+<body>
+
+    <div class="layout-container">
+        
+        <header class="navbar">
+            <a href="{% url 'dashboard' %}" class="brand-logo">
+                📚 StudyPlan
+            </a>
+
+            <div class="controls-wrapper">
+                <!-- PWA Install Button (Noticeable Pill) -->
+                <button id="pwaInstallBtn" class="pwa-install-pill">
+                    ⇩ Install
+                </button>
+
+                <!-- Compact Theme Icon Button -->
+                <button id="themeToggleBtn" class="theme-icon-btn" title="Toggle Theme">
+                    🌙
+                </button>
+
+                <!-- Floating Theme Dropdown -->
+                <div id="themeDropdownMenu" class="theme-dropdown">
+                    <button class="theme-option-btn" data-theme="light">☀️ Light</button>
+                    <button class="theme-option-btn" data-theme="dark">🌙 Dark</button>
+                    <button class="theme-option-btn" data-theme="auto">🖥️ System</button>
+                </div>
+
+                {% if user.is_authenticated %}
+                    <nav class="nav-links">
+                        <a href="{% url 'dashboard' %}" class="nav-item {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
+                            🏠 Dashboard
+                        </a>
+                        <a href="{% url 'subjects' %}" class="nav-item {% if request.resolver_match.url_name == 'subjects' or request.resolver_match.url_name == 'subject_detail' %}active{% endif %}">
+                            📚 Subjects
+                        </a>
+                        <a href="{% url 'alerts' %}" class="nav-item {% if request.resolver_match.url_name == 'alerts' %}active{% endif %}">
+                            🔔 Alerts
+                        </a>
+                        <a href="{% url 'quick_add' %}" class="nav-item {% if request.resolver_match.url_name == 'quick_add' %}active{% endif %}">
+                            ⚡ Quick Add
+                        </a>
+
+                        <form method="post" action="{% url 'logout' %}" style="display:inline; margin-left: 4px;">
+                            {% csrf_token %}
+                            <button type="submit" class="logout-btn">
+                                🚪 Logout
+                            </button>
+                        </form>
+                    </nav>
+                {% else %}
+                    <nav class="nav-links">
+                        <a href="{% url 'login' %}" class="nav-item {% if request.resolver_match.url_name == 'login' %}active{% endif %}">
+                            🔑 Login
+                        </a>
+                        <a href="{% url 'signup' %}" class="nav-item {% if request.resolver_match.url_name == 'signup' %}active{% endif %}">
+                            ✨ Sign Up
+                        </a>
+                    </nav>
+                {% endif %}
+            </div>
+        </header>
+
+        {% if messages %}
+            <div class="messages-container">
+                {% for message in messages %}
+                    <div class="message-alert {{ message.tags }}">
+                        <span>{{ message }}</span>
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        <main>
+            {% block content %}{% endblock %}
+        </main>
+
+    </div>
+
+    <!-- Theme Detection & PWA Installation Logic -->
+    <script>
+        // --- 1. Compact Theme Switcher & System Detector ---
+        const themeToggleBtn = document.getElementById('themeToggleBtn');
+        const themeDropdownMenu = document.getElementById('themeDropdownMenu');
+        const optionBtns = document.querySelectorAll('.theme-option-btn');
+        const htmlElement = document.documentElement;
+
+        function getSystemTheme() {
+            return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+        }
+
+        function updateThemeButtonIcon(theme) {
+            let activeMode = theme;
+            if (theme === 'auto') {
+                activeMode = getSystemTheme();
+            }
+            themeToggleBtn.textContent = activeMode === 'dark' ? '🌙' : '☀️';
+            themeToggleBtn.title = `Current Theme: ${theme.toUpperCase()} (Click to change)`;
+        }
+
+        function applyTheme(theme) {
+            htmlElement.setAttribute('data-theme', theme);
+            localStorage.setItem('studyplan_theme', theme);
+            updateThemeButtonIcon(theme);
+
+            optionBtns.forEach(btn => {
+                if (btn.getAttribute('data-theme') === theme) {
+                    btn.classList.add('active');
+                } else {
+                    btn.classList.remove('active');
+                }
+            });
+        }
+
+        // Toggle Theme Dropdown Menu
+        themeToggleBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            themeDropdownMenu.classList.toggle('show');
+        });
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', () => {
+            themeDropdownMenu.classList.remove('show');
+        });
+
+        // Theme option click handlers
+        optionBtns.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const selectedTheme = btn.getAttribute('data-theme');
+                applyTheme(selectedTheme);
+                themeDropdownMenu.classList.remove('show');
+            });
+        });
+
+        // Initial Theme Load
+        const savedTheme = localStorage.getItem('studyplan_theme') || 'auto';
+        applyTheme(savedTheme);
+
+        // React dynamically to OS System Dark/Light changes
+        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
+            if (localStorage.getItem('studyplan_theme') === 'auto') {
+                applyTheme('auto');
+            }
+        });
+
+
+        // --- 2. PWA Service Worker & Dynamic Install Button Logic ---
+        const pwaInstallBtn = document.getElementById('pwaInstallBtn');
+        let deferredPrompt;
+
+        function isPwaInstalled() {
+            return window.matchMedia('(display-mode: standalone)').matches || 
+                   window.navigator.standalone === true;
+        }
+
+        // If app is already installed/standalone, ensure install button is hidden
+        if (isPwaInstalled()) {
+            pwaInstallBtn.style.display = 'none';
+        }
+
+        // Register Service Worker
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/static/sw.js')
+                    .then((reg) => console.log('ServiceWorker registered:', reg.scope))
+                    .catch((err) => console.warn('ServiceWorker registration failed:', err));
+            });
+        }
+
+        // Handle PWA Install Prompt Trigger
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+
+            if (!isPwaInstalled()) {
+                pwaInstallBtn.style.display = 'inline-flex';
+            }
+        });
+
+        // Handle Click on Install Button
+        pwaInstallBtn.addEventListener('click', () => {
+            if (deferredPrompt) {
+                deferredPrompt.prompt();
+                deferredPrompt.userChoice.then((choiceResult) => {
+                    if (choiceResult.outcome === 'accepted') {
+                        console.log('PWA installation accepted');
+                        pwaInstallBtn.style.display = 'none';
+                    }
+                    deferredPrompt = null;
+                });
+            }
+        });
+
+        // Hide install button immediately once app is installed
+        window.addEventListener('appinstalled', () => {
+            pwaInstallBtn.style.display = 'none';
+            deferredPrompt = null;
+            console.log('StudyPlan PWA successfully installed!');
+        });
+    </script>
+
+</body>
+</html>

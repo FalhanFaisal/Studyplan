@@ -1,0 +1,30 @@
+{% extends 'base.html' %}
+
+{% block title %}Edit Subject - StudyPlan{% endblock %}
+
+{% block content %}
+<div style="max-width: 550px; margin: 0 auto;">
+    <div class="card">
+        <h1 style="margin: 0 0 6px; font-size: 24px; font-weight: 800;">✏️ Edit {{ subject.name }}</h1>
+        <p style="color: var(--text-muted); margin-bottom: 24px;">Update subject information and semester assignment.</p>
+
+        <form method="post">
+            {% csrf_token %}
+            {% for field in form %}
+                <div class="form-group">
+                    <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                    {{ field }}
+                    {% if field.errors %}
+                        <small style="color: var(--danger);">{{ field.errors.0 }}</small>
+                    {% endif %}
+                </div>
+            {% endfor %}
+
+            <div style="display: flex; gap: 12px; margin-top: 24px;">
+                <button type="submit" class="btn btn-primary" style="flex: 1;">💾 Save Changes</button>
+                <a href="{% url 'subject_detail' subject.id %}" class="btn btn-secondary">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
