@@ -1,4 +1,41 @@
-venv
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments
+venv/
+env/
+ENV/
+.venv/
+
+# Django local database & media uploads
+*.sqlite3
+*.sqlite3-journal
 db.sqlite3
-__pycache__
-media
+media/
+
+# Environment files & secret keys
+.env
+.env.local
+local_settings.py
+
+# Static collected files
+staticfiles/
+
+# IDE & text editors
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Operating system files
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Test & coverage artifacts
+.coverage
+htmlcov/
+.pytest_cache/

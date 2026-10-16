@@ -243,29 +243,109 @@
             color: #ffffff;
         }
 
-        /* Noticeable PWA Install Button */
-        .pwa-install-pill {
+        /* Small Top PWA Install Pop-up Window */
+        .install-popup-window {
+            position: fixed;
+            top: 16px;
+            left: 50%;
+            transform: translateX(-50%) translateY(-20px);
+            z-index: 9999;
+            width: calc(100% - 32px);
+            max-width: 420px;
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 14px;
+            box-shadow: 0 12px 28px -4px rgba(0, 0, 0, 0.18), 0 4px 10px -2px rgba(0, 0, 0, 0.08);
+            padding: 10px 14px;
             display: none;
-            height: 38px;
-            padding: 0 16px;
-            border-radius: 20px;
-            border: 1px solid var(--primary-hover);
-            background: var(--primary-light);
-            color: var(--primary-hover);
-            font-weight: 700;
-            font-size: 13.5px;
-            cursor: pointer;
             align-items: center;
-            gap: 6px;
-            transition: all 0.2s ease;
-            box-shadow: var(--shadow-sm);
+            gap: 12px;
+            opacity: 0;
+            transition: opacity 0.3s cubic-bezier(0.16, 1, 0.3, 1), transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
         }
 
-        .pwa-install-pill:hover {
+        .install-popup-window.show {
+            display: flex;
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+
+        .install-popup-icon {
+            width: 38px;
+            height: 38px;
+            border-radius: 10px;
+            background: var(--primary-light);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            flex-shrink: 0;
+        }
+
+        .install-popup-content {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .install-popup-title {
+            font-weight: 700;
+            font-size: 13.5px;
+            color: var(--text-main);
+            line-height: 1.25;
+            margin-bottom: 2px;
+        }
+
+        .install-popup-desc {
+            font-size: 12px;
+            color: var(--text-muted);
+            line-height: 1.3;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .install-popup-actions {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            flex-shrink: 0;
+        }
+
+        .install-popup-btn {
             background: var(--primary-hover);
             color: #ffffff;
+            border: none;
+            padding: 6px 13px;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .install-popup-btn:hover {
+            background: #1d4ed8;
             transform: translateY(-1px);
-            box-shadow: var(--shadow-md);
+        }
+
+        .install-popup-close {
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            font-size: 18px;
+            line-height: 1;
+            cursor: pointer;
+            padding: 4px 6px;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.15s ease, color 0.15s ease;
+        }
+
+        .install-popup-close:hover {
+            background: var(--primary-light);
+            color: var(--text-main);
         }
 
         .logout-btn {
@@ -483,6 +563,19 @@
 </head>
 <body>
 
+    <!-- Small Top PWA Install Pop-up Window -->
+    <div id="pwaInstallPopup" class="install-popup-window" role="dialog" aria-label="Install App" style="display: none;">
+        <div class="install-popup-icon">📚</div>
+        <div class="install-popup-content">
+            <div class="install-popup-title">Install StudyPlan</div>
+            <div class="install-popup-desc">Add app to device for fast offline access</div>
+        </div>
+        <div class="install-popup-actions">
+            <button id="pwaInstallBtn" class="install-popup-btn">Install</button>
+            <button id="pwaClosePopupBtn" class="install-popup-close" title="Dismiss" aria-label="Dismiss">&times;</button>
+        </div>
+    </div>
+
     <div class="layout-container">
         
         <header class="navbar">
@@ -491,11 +584,6 @@
             </a>
 
             <div class="controls-wrapper">
-                <!-- PWA Install Button (Noticeable Pill) -->
-                <button id="pwaInstallBtn" class="pwa-install-pill">
-                    ⇩ Install
-                </button>
-
                 <!-- Compact Theme Icon Button -->
                 <button id="themeToggleBtn" class="theme-icon-btn" title="Toggle Theme">
                     🌙
@@ -627,8 +715,10 @@
         });
 
 
-        // --- 2. PWA Service Worker & Dynamic Install Button Logic ---
+        // --- 2. PWA Service Worker & Top Install Pop-up Logic ---
+        const pwaInstallPopup = document.getElementById('pwaInstallPopup');
         const pwaInstallBtn = document.getElementById('pwaInstallBtn');
+        const pwaClosePopupBtn = document.getElementById('pwaClosePopupBtn');
         let deferredPrompt;
 
         function isPwaInstalled() {
@@ -636,9 +726,20 @@
                    window.navigator.standalone === true;
         }
 
-        // If app is already installed/standalone, ensure install button is hidden
-        if (isPwaInstalled()) {
-            pwaInstallBtn.style.display = 'none';
+        function showInstallPopup() {
+            if (!pwaInstallPopup || isPwaInstalled()) return;
+            pwaInstallPopup.style.display = 'flex';
+            requestAnimationFrame(() => {
+                pwaInstallPopup.classList.add('show');
+            });
+        }
+
+        function hideInstallPopup() {
+            if (!pwaInstallPopup) return;
+            pwaInstallPopup.classList.remove('show');
+            setTimeout(() => {
+                pwaInstallPopup.style.display = 'none';
+            }, 300);
         }
 
         // Register Service Worker
@@ -655,28 +756,38 @@
             e.preventDefault();
             deferredPrompt = e;
 
-            if (!isPwaInstalled()) {
-                pwaInstallBtn.style.display = 'inline-flex';
+            if (!isPwaInstalled() && !sessionStorage.getItem('studyplan_install_dismissed')) {
+                showInstallPopup();
             }
         });
 
-        // Handle Click on Install Button
-        pwaInstallBtn.addEventListener('click', () => {
-            if (deferredPrompt) {
-                deferredPrompt.prompt();
-                deferredPrompt.userChoice.then((choiceResult) => {
-                    if (choiceResult.outcome === 'accepted') {
-                        console.log('PWA installation accepted');
-                        pwaInstallBtn.style.display = 'none';
-                    }
-                    deferredPrompt = null;
-                });
-            }
-        });
+        // Handle Click on Install Button in Pop-up
+        if (pwaInstallBtn) {
+            pwaInstallBtn.addEventListener('click', () => {
+                if (deferredPrompt) {
+                    deferredPrompt.prompt();
+                    deferredPrompt.userChoice.then((choiceResult) => {
+                        if (choiceResult.outcome === 'accepted') {
+                            console.log('PWA installation accepted');
+                        }
+                        hideInstallPopup();
+                        deferredPrompt = null;
+                    });
+                }
+            });
+        }
 
-        // Hide install button immediately once app is installed
+        // Handle Close / Dismiss Button
+        if (pwaClosePopupBtn) {
+            pwaClosePopupBtn.addEventListener('click', () => {
+                hideInstallPopup();
+                sessionStorage.setItem('studyplan_install_dismissed', 'true');
+            });
+        }
+
+        // Hide install popup immediately once app is installed
         window.addEventListener('appinstalled', () => {
-            pwaInstallBtn.style.display = 'none';
+            hideInstallPopup();
             deferredPrompt = null;
             console.log('StudyPlan PWA successfully installed!');
         });
